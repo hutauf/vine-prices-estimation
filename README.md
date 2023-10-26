@@ -11,7 +11,7 @@ Download and unzip the data provided by Amazon. Check the Retail.OrderHistory-fo
 Install python, then pip install those modules: selenium, pandas, tqdm.
 
 # step 4
-Run download_data.py
+Run download_data.py <path_to_csv>
 
 This will connect to keepa using selenium and download price information for your orders with value = 0€. It takes around 1 hour for 200 orders. For each item, a text file will be stored with the source code of the html page.
 

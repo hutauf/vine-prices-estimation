@@ -1,17 +1,27 @@
-import sys
-if not sys.argv[1:]:
-  print("usage: python download_data.py path_to_orderhistory.csv")
-  exit()
+#/usr/env/bin python3
+# coding: utf-8
 
 import pandas
-import os, time
+import os
+import time
+import json
 from tqdm import tqdm
-
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+
+import argparse
+from datetime import datetime
+
+def valid_date(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        msg = "Not a valid date: '{0}'. Expected format: YYYY-MM-DD.".format(s)
+        raise argparse.ArgumentTypeError(msg)
+
 
 def download_page(url):
     driver = webdriver.Chrome()
@@ -33,22 +43,46 @@ def download_page(url):
 
     return source_code
 
-fname = sys.argv[1]
-d = pandas.read_csv(fname)
-d_filtered = d[d["Unit Price"] == 0.]
-asins = sorted(list(d_filtered["ASIN"]))
-print("found %s potential Vine-Orders with price=0"%(len(asins)))
-print("starting download now")
+def dump_db(db):
+    json.dump(db, "data/asininformation.json", indent=2, ensure_ascii=False)
 
-for asin in tqdm(asins):
-    time.sleep(1) # just to get some idle time and confuse the bot-protection
-    print(asin)
-    outname = "keepa_%s.txt"%asin
-    if os.path.exists(outname):
-        print("download already done")
-        continue
-    url = "https://keepa.com/#!product/3-%s"%asin
-    source_code = download_page(url)
-    open(outname, "w", encoding="utf-8").write(source_code)
+if __name__ == "__main__":
 
-print("done downloading data from keepa")
+    parser = argparse.ArgumentParser(description='Download order data.')
+    parser.add_argument('file', help='Path to the CSV file with order data.')
+    parser.add_argument('--start_date', type=valid_date, default='1970-01-01', help='The start date - format YYYY-MM-DD. Default is 1970-01-01.')
+    parser.add_argument('--end_date', type=valid_date, default='2100-01-01', help='The end date - format YYYY-MM-DD. Default is 2100-01-01.')
+
+    args = parser.parse_args()
+
+    #load and filter pandas data:
+    d = pandas.read_csv(args.file)
+    total_purchases = d.shape[0]
+    d = d[d['Order Status'] != 'Cancelled']
+    d = d[d["Unit Price"] == 0.]
+    d['Order Date'] = pandas.to_datetime(d['Order Date']).dt.date
+    d = d[(d['Order Date'] >= args.start_date) & (d['Order Date'] <= args.end_date)]
+
+    print(f"found {d.shape[0]} of {total_purchases} total purchases in order history that might be potential Vine orders")
+    print("starting download now")
+
+    os.makedirs("data", exist_ok=True)
+    db = {}
+    with tqdm(d.iterrows(), total=d.shape[0]) as tbar:
+        for index, row in tbar:
+            asin = row['ASIN']
+            product_name = row['Product Name']
+            order_date = row['Order Date']
+            db[asin] = [order_date, product_name]
+            tbar.set_description(f"Processing: {asin}")
+            outname = f"data/keepa_{asin}.txt"
+            if os.path.exists(outname):
+                tqdm.write(f" *I* download keepa information for {asin} already done")
+                continue
+            url = f"https://keepa.com/#!product/3-{asin}"
+            source_code = download_page(url)
+            open(outname, "w", encoding="utf-8").write(source_code)
+            tqdm.write(f" *I* download of keepa information for {asin} successful")
+            time.sleep(1) # just to get some idle time and confuse the bot-protection
+
+    print("done downloading data from keepa")

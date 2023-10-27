@@ -13,7 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
 import argparse
-from datetime import datetime
+from datetime import datetime, date
 
 def valid_date(s):
     try:
@@ -22,6 +22,10 @@ def valid_date(s):
         msg = "Not a valid date: '{0}'. Expected format: YYYY-MM-DD.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
+def serialize_datetime(obj): 
+    if isinstance(obj, date):
+        return obj.isoformat() 
+    raise TypeError("Type not serializable") 
 
 def download_page(url):
     driver = webdriver.Chrome()
@@ -44,7 +48,7 @@ def download_page(url):
     return source_code
 
 def dump_db(db):
-    json.dump(db, "data/asininformation.json", indent=2, ensure_ascii=False)
+    json.dump(db, open("data/asininformation.json", "w", encoding="utf-8"), indent=2, ensure_ascii=False, default=serialize_datetime)
 
 if __name__ == "__main__":
 
@@ -74,6 +78,7 @@ if __name__ == "__main__":
             product_name = row['Product Name']
             order_date = row['Order Date']
             db[asin] = [order_date, product_name]
+            dump_db(db)
             tbar.set_description(f"Processing: {asin}")
             outname = f"data/keepa_{asin}.txt"
             if os.path.exists(outname):

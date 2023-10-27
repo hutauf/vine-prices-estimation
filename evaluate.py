@@ -1,4 +1,4 @@
-import re, os
+import re, os, numpy
 def tonumber(i):
     if "+" in i or "-" in i:
         return ""

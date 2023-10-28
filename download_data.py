@@ -63,8 +63,12 @@ if __name__ == "__main__":
     d = pandas.read_csv(args.file)
     total_purchases = d.shape[0]
     d = d[d['Order Status'] != 'Cancelled']
+    d["Unit Price"] = pandas.to_numeric(d["Unit Price"], errors='coerce')
     d = d[d["Unit Price"] == 0.]
-    d['Order Date'] = pandas.to_datetime(d['Order Date']).dt.date
+    try:
+        d['Order Date'] = pandas.to_datetime(d['Order Date'], format='ISO8601').dt.date
+    except:
+        d['Order Date'] = pandas.to_datetime(d['Order Date']).dt.date
     d = d[(d['Order Date'] >= args.start_date) & (d['Order Date'] <= args.end_date)]
 
     print(f"found {d.shape[0]} of {total_purchases} total purchases in order history that might be potential Vine orders")

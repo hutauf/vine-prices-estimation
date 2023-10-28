@@ -1,5 +1,5 @@
 # vine-prices-estimation
-check prices for vine purchases on keepa
+Check prices for vine purchases on keepa. I assume you are using Windows and have Chrome installed.
 
 # step 1
 Go to https://www.amazon.de/hz/privacy-central/data-requests/preview.html and request your order data. (Meine Bestellungen)

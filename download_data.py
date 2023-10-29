@@ -41,11 +41,21 @@ def download_page(url):
     
     # Get the source code
     source_code = driver.page_source
+    dataProduct = driver.execute_script("return dataProduct;")
 
     # Close the driver
     driver.quit()
 
-    return source_code
+    return source_code, dataProduct
+
+def download_exists(asin):
+    for entry in existing_downloads:
+        if entry.endswith("json") and asin in entry:
+            try:
+                return datetime.fromtimestamp(float(entry.split("_")[-1].split(".")[0])).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                return "unknown date"
+
 
 def dump_db(db):
     json.dump(db, open("data/asininformation.json", "w", encoding="utf-8"), indent=2, ensure_ascii=False, default=serialize_datetime)
@@ -75,6 +85,8 @@ if __name__ == "__main__":
     print("starting download now")
 
     os.makedirs("data", exist_ok=True)
+    existing_downloads = os.listdir("data")
+
     db = {}
     with tqdm(d.iterrows(), total=d.shape[0]) as tbar:
         for index, row in tbar:
@@ -84,13 +96,15 @@ if __name__ == "__main__":
             db[asin] = [order_date, product_name]
             dump_db(db)
             tbar.set_description(f"Processing: {asin}")
-            outname = f"data/keepa_{asin}.txt"
-            if os.path.exists(outname):
-                tqdm.write(f" *I* download keepa information for {asin} already done")
+            
+            if (time_of_download := download_exists(asin)):
+                tqdm.write(f" *I* download keepa information for {asin} already done on {time_of_download}")
                 continue
             url = f"https://keepa.com/#!product/3-{asin}"
-            source_code = download_page(url)
+            source_code, dataProduct = download_page(url)
+            outname = f"data/keepa_{asin}_{time.time()}.txt"
             open(outname, "w", encoding="utf-8").write(source_code)
+            json.dump(dataProduct, open(f"data/keepa_dataProduct_{asin}_{time.time()}.json", "w", encoding="utf-8"), ensure_ascii=False)
             tqdm.write(f" *I* download of keepa information for {asin} successful")
             time.sleep(1) # just to get some idle time and confuse the bot-protection
 

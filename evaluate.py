@@ -122,7 +122,7 @@ if __name__ == "__main__":
                 #nothing found
                 pass
             else:
-                timed_price = numpy.min([timed_price, values[time_idx-1]])
+                timed_price = values[time_idx-1] if timed_price==-1 else numpy.min([timed_price, values[time_idx-1]])
             prices += [i for i in list(values) if i>0]
 
         if "plot" in sys.argv and not skipplot:

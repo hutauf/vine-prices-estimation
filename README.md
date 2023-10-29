@@ -16,7 +16,10 @@ Run download_data.py <path_to_csv>
 
 You can run ´python download_data.py --help´ to see possible filter options and reduce the amount of data being downloaded. Already downloaded keepa-pages will be skipped. Please make sure you have the permission from keepa to scrape their webpage before using this code.
 
-The program will connect to keepa using selenium and download price information for your orders with value = 0€. It takes around 1 hour for 200 orders. For each item, a text file will be stored with the source code of the html page.
+The program will connect to keepa using selenium and download price information for your orders with value = 0€. It takes around 1 hour for 200 orders. For each item, a text file will be stored with the source code of the html page as well as the product price history in json file format.
 
 # step 5
 Run evaluate.py to show some stats and export an Excel sheet.
+
+If you run ´python evaluate.py plot´ (needs matplotlib installed), it will create keepa-typical plots with your time of purchase for each ASIN.
+

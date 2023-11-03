@@ -70,7 +70,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #load and filter pandas data:
-    d = pandas.read_csv(args.file)
+    if args.file.endswith("csv"):
+        d = pandas.read_csv(args.file)
+    elif args.file.endswith("json"):
+        d = pandas.read_json(args.file, orient='records')
+    else:
+        raise Exception("only csv and json supported yet")
     total_purchases = d.shape[0]
     d = d[d['Order Status'] != 'Cancelled']
     d["Unit Price"] = pandas.to_numeric(d["Unit Price"], errors='coerce')

@@ -12,7 +12,7 @@ Install python, then
 ´pip install -r requirements.txt´
 
 # step 4
-Run download_data.py <path_to_csv>
+Run download_data.py <path_to_csv_or_json>
 
 You can run ´python download_data.py --help´ to see possible filter options and reduce the amount of data being downloaded. Already downloaded keepa-pages will be skipped. Please make sure you have the permission from keepa to scrape their webpage before using this code.
 

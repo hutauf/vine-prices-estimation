@@ -63,41 +63,69 @@ def dump_db(db):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Download order data.')
-    parser.add_argument('file', help='Path to the CSV file with order data.')
+    parser.add_argument('file', help='Path to the CSV file with order data.', nargs='+')
     parser.add_argument('--start_date', type=valid_date, default='1970-01-01', help='The start date - format YYYY-MM-DD. Default is 1970-01-01.')
     parser.add_argument('--end_date', type=valid_date, default='2100-01-01', help='The end date - format YYYY-MM-DD. Default is 2100-01-01.')
 
     args = parser.parse_args()
 
     #load and filter pandas data:
-    if args.file.endswith("csv"):
-        d = pandas.read_csv(args.file)
-    elif args.file.endswith("json"):
-        d = pandas.read_json(args.file, orient='records')
-    else:
-        raise Exception("only csv and json supported yet")
-    total_purchases = d.shape[0]
-    d = d[d['Order Status'] != 'Cancelled']
-    d["Unit Price"] = pandas.to_numeric(d["Unit Price"], errors='coerce')
-    d = d[d["Unit Price"] == 0.]
-    try:
-        d['Order Date'] = pandas.to_datetime(d['Order Date'], format='ISO8601').dt.date
-    except:
-        d['Order Date'] = pandas.to_datetime(d['Order Date']).dt.date
-    d = d[(d['Order Date'] >= args.start_date) & (d['Order Date'] <= args.end_date)]
+    alld = None
+    total_purchasess = 0
+    for f in args.file:
+        print("working on input file", f)
+        amazonorderhistory = False
+        if f.endswith("csv"):
+            d = pandas.read_csv(f)
+            #check if it's an export from amazon order history plugin:
+            if "description" in d.columns:
+                amazonorderhistory = True
+                d.rename(columns={'order id': 'Order ID'}, inplace=True)
+                d.rename(columns={'order date': 'Order Date'}, inplace=True)
+                d.rename(columns={'description': 'Product Name'}, inplace=True)
+                d.rename(columns={'price': 'Unit Price'}, inplace=True)
+                d['Unit Price'] = d['Unit Price'].str.replace('€', '').str.replace(',', '.')
 
-    print(f"found {d.shape[0]} of {total_purchases} total purchases in order history that might be potential Vine orders")
+        elif f.endswith("json"):
+            d = pandas.read_json(f, orient='records')
+        else:
+            raise Exception("only csv and json supported yet")
+        total_purchases = d.shape[0]
+        total_purchasess += total_purchases
+        if not amazonorderhistory:
+            d = d[d['Order Status'] != 'Cancelled']
+        d["Unit Price"] = pandas.to_numeric(d["Unit Price"], errors='coerce')
+        d = d[d["Unit Price"] == 0.]
+        try:
+            d['Order Date'] = pandas.to_datetime(d['Order Date'], format='ISO8601').dt.date
+        except:
+            d['Order Date'] = pandas.to_datetime(d['Order Date']).dt.date
+        d = d[(d['Order Date'] >= args.start_date) & (d['Order Date'] <= args.end_date)]
+
+        if alld is None:
+            alld = d
+        else:
+            #append it:
+            alld = pandas.concat([alld, d], ignore_index=True)
+        
+        print(f"found {d.shape[0]} orders in {f}")
+
+    print(f"found {alld.shape[0]} of {total_purchasess} total purchases in order history that might be potential Vine orders")
     print("starting download now")
 
     os.makedirs("data", exist_ok=True)
     existing_downloads = os.listdir("data")
-
+    order_ids_used = []
     db = {}
-    with tqdm(d.iterrows(), total=d.shape[0]) as tbar:
+    with tqdm(alld.iterrows(), total=alld.shape[0]) as tbar:
         for index, row in tbar:
             asin = row['ASIN']
             product_name = row['Product Name']
             order_date = row['Order Date']
+            order_id = row["Order ID"]
+            if order_id in order_ids_used:
+                continue # make sure to not use an order ID twice
+            order_ids_used.append(order_id)
             db[asin] = [order_date, product_name]
             dump_db(db)
             tbar.set_description(f"Processing: {asin}")

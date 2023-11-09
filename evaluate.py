@@ -61,7 +61,7 @@ if __name__ == "__main__":
         unix_timestamp = date_obj.timestamp()
         asinfiles = [i for i in datafiles if asin in i and i.startswith("keepa_dataProduct")]
         prices = []
-        timed_price = -1
+        timed_price = -0.01
         if "plot" in sys.argv:
             if os.path.exists("plots/plot_%s.png"%asin):
                 skipplot=True

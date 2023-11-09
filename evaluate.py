@@ -103,6 +103,10 @@ if __name__ == "__main__":
             time_idx = numpy.searchsorted(timestamps, unix_timestamp)
             if time_idx == 0 or time_idx == len(timestamps):
                 #nothing found
+                if time_idx == 0:
+                    time_idx = numpy.searchsorted(timestamps, unix_timestamp + 3600*24) #assume the order wasn't done at 0:00 but 23:59:59..
+                    if time_idx!=0:
+                        timed_price = values[time_idx-1]
                 pass
             else:
                 timed_price = values[time_idx-1]
@@ -129,6 +133,10 @@ if __name__ == "__main__":
             time_idx = numpy.searchsorted(timestamps, unix_timestamp)
             if time_idx == 0 or time_idx == len(timestamps):
                 #nothing found
+                if time_idx == 0:
+                    time_idx = numpy.searchsorted(timestamps, unix_timestamp + 3600*24) #assume the order wasn't done at 0:00 but 23:59:59..
+                    if time_idx!=0:
+                        timed_price = values[time_idx-1] if timed_price==-0.01 else numpy.min([timed_price, values[time_idx-1]])
                 pass
             else:
                 timed_price = values[time_idx-1] if timed_price==-0.01 else numpy.min([timed_price, values[time_idx-1]])

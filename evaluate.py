@@ -4,6 +4,7 @@
 import sys
 import os
 import numpy
+import numpy as np
 from datetime import datetime
 import xlsxwriter
 import json
@@ -40,6 +41,33 @@ def formatted(csv_data, mintime=0):
 def only_timestamp_to_unix(keepa_timestamp):
     return (keepa_timestamp + 21564000)*60
 
+def try_interpolation(x_data_in, y_data_in, x):
+    x_data = []
+    y_data = []
+    for i in range(len(y_data_in)):
+        if y_data_in[i] != -0.01:
+            x_data.append(x_data_in[i])
+            y_data.append(y_data_in[i])
+    
+    if len(x_data) == 0:
+        return -0.01
+    elif len(x_data) == 1:
+        return y_data[0]
+
+    # Ensure x is within the bounds of x_data
+    x = np.clip(x, x_data[0], x_data[-1])
+
+    # Find the index where x should be inserted to maintain the sorted order
+    index = np.searchsorted(x_data, x)
+
+    if index == 0:
+        return y_data[0]
+    elif index == len(x_data):
+        return y_data[-1]
+    else:
+        x0, x1 = x_data[index - 1], x_data[index]
+        y0, y1 = y_data[index - 1], y_data[index]
+        return y0 + (x - x0) * (y1 - y0) / (x1 - x0)
 
 random_high_value = 1000000
 
@@ -107,9 +135,12 @@ if __name__ == "__main__":
                     time_idx = numpy.searchsorted(timestamps, unix_timestamp + 3600*24) #assume the order wasn't done at 0:00 but 23:59:59..
                     if time_idx!=0:
                         timed_price = values[time_idx-1]
-                pass
             else:
                 timed_price = values[time_idx-1]
+
+            if timed_price == -0.01: #still nothing found:
+                timed_price = try_interpolation(timestamps, values, unix_timestamp)
+
             #also check marketplace price:
             restructured = formatted(content["csv"][1])
             timestamps, values = zip(*restructured)
@@ -137,9 +168,12 @@ if __name__ == "__main__":
                     time_idx = numpy.searchsorted(timestamps, unix_timestamp + 3600*24) #assume the order wasn't done at 0:00 but 23:59:59..
                     if time_idx!=0:
                         timed_price = values[time_idx-1] if timed_price==-0.01 else numpy.min([timed_price, values[time_idx-1]])
-                pass
             else:
                 timed_price = values[time_idx-1] if timed_price==-0.01 else numpy.min([timed_price, values[time_idx-1]])
+
+            if timed_price == -0.01: #still nothing found:
+                timed_price = try_interpolation(timestamps, values, unix_timestamp)
+
             prices += [i for i in list(values) if i>0]
 
         if "plot" in sys.argv and not skipplot:

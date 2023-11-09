@@ -67,7 +67,7 @@ def try_interpolation(x_data_in, y_data_in, x):
     else:
         x0, x1 = x_data[index - 1], x_data[index]
         y0, y1 = y_data[index - 1], y_data[index]
-        return y0 + (x - x0) * (y1 - y0) / (x1 - x0)
+        return round(y0 + (x - x0) * (y1 - y0) / (x1 - x0), 2)
 
 random_high_value = 1000000
 

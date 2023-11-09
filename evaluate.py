@@ -37,6 +37,9 @@ def formatted(csv_data, mintime=0):
         i = (i - 1) if i else 0
     return list(zip(timestamps[i:], values[i:]))
 
+def only_timestamp_to_unix(keepa_timestamp):
+    return (keepa_timestamp + 21564000)*60
+
 
 random_high_value = 1000000
 
@@ -74,8 +77,12 @@ if __name__ == "__main__":
                 print("issues with csv from %s"%asin)
                 continue
             
+            lastupdatetimestamp = only_timestamp_to_unix(content["lastUpdate"])
+
             restructured = formatted(content["csv"][0])
             timestamps, values = zip(*restructured)
+            timestamps = list(timestamps) + [lastupdatetimestamp]
+            values = list(values) + [values[-1]]
             values = numpy.array(values).astype("float")/100.
             if "plot" in sys.argv and not skipplot:
                 tnew = []
@@ -102,6 +109,8 @@ if __name__ == "__main__":
             #also check marketplace price:
             restructured = formatted(content["csv"][1])
             timestamps, values = zip(*restructured)
+            timestamps = list(timestamps) + [lastupdatetimestamp]
+            values = list(values) + [values[-1]]
             values = numpy.array(values).astype("float")/100.
             if "plot" in sys.argv and not skipplot:
                 tnew = []
@@ -122,7 +131,7 @@ if __name__ == "__main__":
                 #nothing found
                 pass
             else:
-                timed_price = values[time_idx-1] if timed_price==-1 else numpy.min([timed_price, values[time_idx-1]])
+                timed_price = values[time_idx-1] if timed_price==-0.01 else numpy.min([timed_price, values[time_idx-1]])
             prices += [i for i in list(values) if i>0]
 
         if "plot" in sys.argv and not skipplot:

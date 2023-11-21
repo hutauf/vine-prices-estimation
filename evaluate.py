@@ -260,7 +260,7 @@ if __name__ == "__main__":
     worksheet.set_column(2, 2, 15)  # Width of columns B:D set to 30.
     worksheet.set_column(0, 0, 11)  # Width of columns B:D set to 30.
     possible_values = ["unknown", "in use", "trashed", "defect", "returned", "brand new", "consumed"]
-    worksheet.data_validation('G5:G{}'.format(len(dictionary) + 100), {'validate': 'list',
+    worksheet.data_validation('H5:H{}'.format(len(dictionary) + 100), {'validate': 'list',
                                   'source': possible_values})
 
     # Close the workbook.

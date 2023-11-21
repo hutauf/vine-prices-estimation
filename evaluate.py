@@ -7,6 +7,7 @@ import numpy
 import numpy as np
 from datetime import datetime
 import xlsxwriter
+import pandas as pd
 import json
 if "plot" in sys.argv:
     from matplotlib import pyplot as plt
@@ -71,11 +72,25 @@ def try_interpolation(x_data_in, y_data_in, x):
 
 random_high_value = 1000000
 
+def get_xlsx_in_args():
+    for name in sys.argv:
+        if name.endswith(".xlsx"):
+            return name
+    return None
+
+def parse_existing_xlsx(existing_xlsx):
+    if not existing_xlsx:
+        return {}
+    df = pd.read_excel(existing_xlsx, header=3)
+    return df.set_index('ASIN')['Condition'].to_dict()
+
 if __name__ == "__main__":
 
     if "plot" in sys.argv:
         os.makedirs("plots", exist_ok=True)
         skipplot=False
+    existing_xlsx = get_xlsx_in_args()
+    existing_conditions = parse_existing_xlsx(existing_xlsx)
 
     #load asin information as basis for calculation:
     asindb = json.load(open("data/asininformation.json", "r", encoding="utf-8"))
@@ -241,7 +256,7 @@ if __name__ == "__main__":
         for col, value in enumerate(values):
             worksheet.write(row, col, value if value not in [-1] else -0.01)
         # Set the condition to "unknown" by default.
-        worksheet.write(row, len(values), "unknown")
+        worksheet.write(row, len(values), "unknown" if key not in existing_conditions else existing_conditions[key])
         # Set the value formula.
         worksheet.write_formula(row, len(values) + 1,
                                 '=IF(OR(H{}="unknown", H{}="brand new"), IF(G{}<0, D{}, G{}), IF(H{}="in use", $B$1*IF(G{}<0, D{}, G{}), 0))'.format(row + 1, row + 1, row + 1, row + 1, row + 1, row + 1, row + 1, row + 1, row + 1))

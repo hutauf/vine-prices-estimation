@@ -1,4 +1,7 @@
 # vine-prices-estimation
+
+If you use this tool, it might get you banned from keepa! This is only for educational purposes and it has happened that automated tools running on keepa will result in an IP ban. I don't recommend using this tool. Amazon will release the list end of Jan '24, and I would just wait it out now.
+
 Check prices for vine purchases on keepa. I assume you are using Windows and have Chrome installed.
 
 # step 1
